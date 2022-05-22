@@ -1,0 +1,11 @@
+include:
+  - project: 'goldfish-projects/kingmakerdata-web'
+    file:
+      - .gitlab-ci-cloud.yml
+      - .gitlab-ci-aws.yml
+
+stages:
+  # - build
+  - deploy
+  - staging
+  - production

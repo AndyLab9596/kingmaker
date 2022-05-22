@@ -1,0 +1,11 @@
+import * as React from 'react';
+// import BackToHome from 'src/components/BackToHome';
+
+// export default {
+//   component: BackToHome,
+//   title: 'BackToHome',
+// };
+
+// export const basic: React.FC = () => {
+//   return <BackToHome type="primary" />;
+// };

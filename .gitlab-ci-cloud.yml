@@ -1,0 +1,72 @@
+# include:
+#   local: .gitlab-ci-aws.yml
+
+.env cloud: &env_cloud
+  environment:
+    name: cloud
+    url: https://kingmaker-data.dev2.goldfishcode.com
+
+.var cloud: &var_cloud
+  variables:
+    SSH_HOST: $CLOUD_HOST
+    SSH_USER: $CLOUD_USER
+    SSH_PKEY: $CLOUD_SSH_KEY
+
+    DOCKER_WEB_IMAGE: "hdwhub/kingmaker-data-web:latest"
+    PROJECT_ROOT: "~/data/kingmaker-data"
+    STACK_NAME: "kingmaker-data-web"
+
+.setup ssh: &setup_ssh
+  before_script:
+    - which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
+    - eval $(ssh-agent -s)
+    - echo "${SSH_PKEY}" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${SSH_HOST}" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+.build docker: &build_docker_images
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u $DOCKER_REGISTRY_USER --password-stdin
+  script:
+    - cat ${CLOUD_ENV_FILE} > .env
+    - docker build --pull -f Dockerfile -t $DOCKER_WEB_IMAGE .
+    - docker push $DOCKER_WEB_IMAGE
+
+.deploy stack: &deploy_stack
+  <<: *setup_ssh
+  script:
+    - echo "deploying to ${PROJECT_ROOT}"
+    - tar cvzf stack.tar.gz stack.yml
+    - scp stack.tar.gz "${SSH_USER}@${SSH_HOST}:${PROJECT_ROOT}"
+    - ssh "$SSH_USER@$SSH_HOST" "cd ${PROJECT_ROOT}
+      && tar xvzf stack.tar.gz -C stack-fe
+      && docker stack deploy -c stack-fe/stack.yml --with-registry-auth $STACK_NAME
+      && rm -f stack.tar.gz"
+
+# cloud-build:
+#   stage: build
+#   when: manual
+#   allow_failure: false
+#   only:
+#     - develop
+#   <<: *env_cloud
+#   <<: *var_cloud
+#   <<: *build_docker_images
+
+cloud-deploy:
+  stage: deploy
+  when: manual
+  # needs:
+  # - job: cloud-build
+  #   artifacts: false
+  only:
+    - develop
+  <<: *env_cloud
+  <<: *var_cloud
+  <<: *deploy_stack
+

@@ -1,0 +1,27 @@
+variables:
+  AWS_ACCESS_KEY_ID: '$AWS_ACCESS_KEY_ID'
+  AWS_SECRET_ACCESS_KEY: '$AWS_SECRET_ACCESS_KEY'
+
+staging:
+  image: python:latest
+  stage: staging
+  script:
+    - apt-get update -y
+    - pip install awscli
+    - tar -xvzf public.tar.gz
+    - aws s3 rm s3://staging-web.kingmakerdata.com --recursive
+    - aws s3 cp ./public s3://staging-web.kingmakerdata.com --recursive
+  only:
+    - staging
+
+production:
+  image: python:latest
+  stage: production
+  script:
+    - apt-get update -y
+    - pip install awscli
+    - tar -xvzf prod_public.tar.gz
+    - aws s3 rm s3://www.kingmakerdata.com --recursive
+    - aws s3 cp ./public s3://www.kingmakerdata.com --recursive
+  only:
+    - main

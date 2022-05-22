@@ -1,0 +1,21 @@
+version: '3'
+services:
+  web:
+    image: hdwhub/kingmaker-data-web:latest
+    environment:
+      GATSBY_API_URL: https://kingmaker-data.dev2.goldfishcode.com/v1
+      NODE_OPTIONS: --max_old_space_size=4096
+    build:
+      context: .
+      dockerfile: ./Dockerfile.do
+    volumes:
+      - ./src:/usr/src/app
+# services:
+#   kingmakerdata-web:
+#     container_name: kingmakerdata-web
+#     environment:
+#       GATSBY_API_URL: https://kingmaker-data.dev2.goldfishcode.com/v1
+#       NODE_OPTIONS: --max_old_space_size=4096
+#     build:
+#       context: .
+#       dockerfile: ./Dockerfile.do
